@@ -13,5 +13,7 @@
     <string name="network_toast">Uh-oh! This app requires an internet connection</string>
     <string name="title_activity_graph" translatable="false">GraphActivity</string>
     <string name="appwidget_text" translatable="false">StockHawk Widget</string>
-    <string name="add_widget">Add widget</string>
+    <string name="add_widget" translatable="false">Add widget</string>
+
+    <string name="stock_already_saved">This stock is already saved!</string>
 </resources>

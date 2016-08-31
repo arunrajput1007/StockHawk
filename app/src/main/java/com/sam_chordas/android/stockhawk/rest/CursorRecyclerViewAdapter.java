@@ -1,6 +1,5 @@
 package com.sam_chordas.android.stockhawk.rest;
 
-import android.content.Context;
 import android.database.Cursor;
 import android.database.DataSetObserver;
 import android.support.v7.widget.RecyclerView;
@@ -20,7 +19,7 @@ public abstract class CursorRecyclerViewAdapter<VH extends RecyclerView.ViewHold
 
     CursorRecyclerViewAdapter() {
         mCursor = null;
-        dataIsValid = null != null;
+        dataIsValid = false;
         rowIdColumn = -1;
         mDataSetObserver = new NotifyingDataSetObserver();
         if (dataIsValid) {

@@ -11,7 +11,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.ResultReceiver;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -34,7 +34,6 @@ import com.melnykov.fab.FloatingActionButton;
 import com.sam_chordas.android.stockhawk.R;
 import com.sam_chordas.android.stockhawk.data.QuoteColumns;
 import com.sam_chordas.android.stockhawk.data.QuoteProvider;
-import com.sam_chordas.android.stockhawk.event.MessageEvent;
 import com.sam_chordas.android.stockhawk.rest.QuoteCursorAdapter;
 import com.sam_chordas.android.stockhawk.rest.RecyclerViewItemClickListener;
 import com.sam_chordas.android.stockhawk.rest.Utils;
@@ -109,25 +108,39 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
                             .inputType(InputType.TYPE_CLASS_TEXT).backgroundColor(Color.GRAY)
                             .input(R.string.input_hint, R.string.input_prefill, new MaterialDialog.InputCallback() {
                                 @Override
-                                public void onInput(@NonNull MaterialDialog dialog, CharSequence input) {
+                                public void onInput(@NonNull MaterialDialog dialog, final CharSequence input) {
                                     // On FAB click, receive user input. Make sure the stock doesn't already exist
                                     // in the DB and proceed accordingly
-                                    Cursor c = getContentResolver().query(QuoteProvider.Quotes.CONTENT_URI,
-                                            new String[]{QuoteColumns.SYMBOL}, QuoteColumns.SYMBOL + "= ?",
-                                            new String[]{input.toString()}, null);
-                                    if ((c != null ? c.getCount() : 0) != 0) {
-                                        Toast toast =
-                                                Toast.makeText(MyStocksActivity.this, "This stock is already saved!",
-                                                        Toast.LENGTH_LONG);
-                                        toast.setGravity(Gravity.CENTER, Gravity.CENTER, 0);
-                                        toast.show();
-                                        c.close();
-                                    } else {
-                                        // Add the stock to DB
-                                        mServiceIntent.putExtra("tag", "add");
-                                        mServiceIntent.putExtra("symbol", input.toString());
-                                        startService(mServiceIntent);
-                                    }
+
+                                    new Thread() {
+                                        @Override
+                                        public void run() {
+                                            Looper.prepare();
+                                            Cursor c = getContentResolver().query(QuoteProvider.Quotes.CONTENT_URI,
+                                                    new String[]{QuoteColumns.SYMBOL}, QuoteColumns.SYMBOL + "= ?",
+                                                    new String[]{input.toString()}, null);
+                                            if ((c != null ? c.getCount() : 0) != 0) {
+                                                Handler handler = new Handler(Looper.getMainLooper());
+                                                handler.post(new Runnable() {
+                                                    @Override
+                                                    public void run() {
+                                                        Toast toast =
+                                                                Toast.makeText(MyStocksActivity.this, R.string.stock_already_saved,
+                                                                        Toast.LENGTH_LONG);
+                                                        toast.setGravity(Gravity.CENTER, Gravity.CENTER, 0);
+                                                        toast.show();
+                                                    }
+                                                });
+                                                c.close();
+                                            } else {
+                                                // Add the stock to DB
+                                                mServiceIntent.putExtra("tag", "add");
+                                                mServiceIntent.putExtra("symbol", input.toString());
+                                                startService(mServiceIntent);
+                                            }
+                                            Looper.loop();
+                                        }
+                                    }.start();
                                 }
                             })
                             .show();
@@ -230,3 +243,5 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
         mCursorAdapter.swapCursor(null);
     }
 }
+
+
